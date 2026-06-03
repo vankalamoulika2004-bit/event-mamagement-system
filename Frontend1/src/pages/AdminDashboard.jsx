@@ -4,11 +4,37 @@ import axios from "axios";
 import "./Home.css"; // Reuse premium variables
 
 function AdminDashboard() {
-  const [user, setUser] = useState(null);
   const [stats, setStats] = useState({ users: 0, events: 0, bookings: 0 });
   const [eventsList, setEventsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  async function fetchDashboardData(token) {
+    try {
+      const res = await axios.get("http://localhost:8080/api/admin/dashboard", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setStats(res.data);
+    } catch (err) {
+      console.log("Error querying admin metrics:", err);
+      // Fallback defaults
+      setStats({ users: 24, events: 5, bookings: 12 });
+    }
+  }
+
+  async function fetchEventsList() {
+    try {
+      const res = await axios.get("http://localhost:8080/api/events");
+      setEventsList(res.data);
+    } catch (err) {
+      console.log("Error querying admin events catalog:", err);
+      setEventsList([]);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -26,41 +52,15 @@ function AdminDashboard() {
         navigate("/dashboard");
         return;
       }
-      setUser(parsedUser);
-      fetchDashboardData(token);
-      fetchEventsList();
+      setTimeout(() => {
+        fetchDashboardData(token);
+        fetchEventsList();
+      }, 0);
     } catch (e) {
       console.log(e);
       navigate("/login");
     }
   }, [navigate]);
-
-  const fetchDashboardData = async (token) => {
-    try {
-      const res = await axios.get("http://localhost:8080/api/admin/dashboard", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setStats(res.data);
-    } catch (err) {
-      console.log("Error querying admin metrics:", err);
-      // Fallback defaults
-      setStats({ users: 24, events: 5, bookings: 12 });
-    }
-  };
-
-  const fetchEventsList = async () => {
-    try {
-      const res = await axios.get("http://localhost:8080/api/events");
-      setEventsList(res.data);
-    } catch (err) {
-      console.log("Error querying admin events catalog:", err);
-      setEventsList([]);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleDeleteEvent = async (eventId) => {
     const token = localStorage.getItem("token");

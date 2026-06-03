@@ -6,21 +6,6 @@ function Navbar() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    // Populate user profile initially
-    updateNavbarState();
-
-    // Subscribe to custom auth state change events
-    const handleAuthStateChange = () => {
-      updateNavbarState();
-    };
-
-    window.addEventListener("loginStateChange", handleAuthStateChange);
-    return () => {
-      window.removeEventListener("loginStateChange", handleAuthStateChange);
-    };
-  }, []);
-
   const updateNavbarState = () => {
     const activeToken = localStorage.getItem("token");
     const activeUserStr = localStorage.getItem("user");
@@ -37,6 +22,23 @@ function Navbar() {
       setUser(null);
     }
   };
+
+  useEffect(() => {
+    // Populate user profile initially
+    setTimeout(() => {
+      updateNavbarState();
+    }, 0);
+
+    // Subscribe to custom auth state change events
+    const handleAuthStateChange = () => {
+      updateNavbarState();
+    };
+
+    window.addEventListener("loginStateChange", handleAuthStateChange);
+    return () => {
+      window.removeEventListener("loginStateChange", handleAuthStateChange);
+    };
+  }, []);
 
   const handleLogout = () => {
     if (window.confirm("🚪 Are you sure you want to log out of Evinto?")) {

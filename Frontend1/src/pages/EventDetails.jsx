@@ -97,32 +97,33 @@ refundPolicy:"Tickets are refundable up to 5 days before the event; no refunds a
   ];
 
   useEffect(() => {
-    fetchEvent();
-  }, [id]);
-
-  const fetchEvent = async () => {
-    try {
-      const res = await axios.get(
-        `http://localhost:8080/api/events/event/${id}`
-      );
-      if (res.data) {
-        setEvent(res.data);
-      } else {
-        findFallback();
-      }
-    } catch (error) {
-      console.log("Error fetching event, matching fallbacks:", error);
-      findFallback();
-    } finally {
-      setLoading(false);
+    function findFallback() {
+      const matched = fallbackEvents.find((evt) => evt.id === id);
+      setEvent(matched || fallbackEvents[0]);
     }
-  };
 
-  const findFallback = () => {
-    const matched = fallbackEvents.find((evt) => evt.id === id);
-    // fallback default if matching fails
-    setEvent(matched || fallbackEvents[0]);
-  };
+    async function fetchEvent() {
+      try {
+        const res = await axios.get(
+          `http://localhost:8080/api/events/event/${id}`
+        );
+        if (res.data) {
+          setEvent(res.data);
+        } else {
+          findFallback();
+        }
+      } catch (error) {
+        console.log("Error fetching event, matching fallbacks:", error);
+        findFallback();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    setTimeout(() => {
+      fetchEvent();
+    }, 0);
+  }, [id]);
 
   if (loading) {
     return (
@@ -232,7 +233,7 @@ refundPolicy:"Tickets are refundable up to 5 days before the event; no refunds a
                   <div className="mb-4">
                     <div className="text-secondary" style={{ fontSize: "0.85rem" }}>TICKET PRICE</div>
                     <div className="font-heading" style={{ fontSize: "1.8rem", fontWeight: 800, color: "var(--accent-cyan)" }}>
-                      FREE REGISTER
+                      {event.price && Number(event.price) > 0 ? `₹${event.price}` : "FREE REGISTER"}
                     </div>
                   </div>
 

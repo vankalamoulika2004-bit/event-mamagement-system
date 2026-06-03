@@ -22,6 +22,10 @@ const eventSchema = new mongoose.Schema(
     category: {
       type: String,
     },
+    price: {
+      type: Number,
+      default: 0
+    }
   },
   { timestamps: true }
 );

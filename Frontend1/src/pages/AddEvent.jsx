@@ -13,6 +13,7 @@ function AddEvent() {
     location: "",
     image: "",
     description: "",
+    price: "",
   });
 
   const [loading, setLoading] = useState(false);
@@ -160,7 +161,18 @@ function AddEvent() {
               value={formData.description}
               onChange={handleChange}
               required
+              className="form-control mb-2"
+            />
+
+            <input
+              type="number"
+              name="price"
+              placeholder="Ticket Price (₹) - Enter 0 for Free"
+              value={formData.price}
+              onChange={handleChange}
+              required
               className="form-control mb-3"
+              min="0"
             />
 
             <button

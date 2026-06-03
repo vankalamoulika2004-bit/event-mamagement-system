@@ -7,6 +7,9 @@ const {
 
 const router = express.Router();
 
+router.get("/", (req, res) => {
+  res.send("Auth route");
+});
 router.post("/register", registerUser);
 
 router.post("/login", loginUser);

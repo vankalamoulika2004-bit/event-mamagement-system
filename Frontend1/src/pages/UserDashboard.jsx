@@ -4,25 +4,18 @@ import axios from "axios";
 import "./Home.css";
 
 function UserDashboard() {
-  const [user, setUser] = useState(null);
+  const [user] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const cachedUser = localStorage.getItem("user");
-
-    if (!token || !cachedUser) {
-      navigate("/login");
-      return;
-    }
-
-    setUser(JSON.parse(cachedUser));
-    fetchBookings(token);
-  }, [navigate]);
-
-  const fetchBookings = async (token) => {
+  async function fetchBookings(token) {
     try {
       const res = await axios.get(
         "http://localhost:8080/api/bookings/my",
@@ -34,13 +27,27 @@ function UserDashboard() {
       );
 
       setBookings(res.data);
-    } catch (err) {
+    } catch {
       console.log("Error loading dashboard bookings");
       setBookings([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const cachedUser = localStorage.getItem("user");
+
+    if (!token || !cachedUser) {
+      navigate("/login");
+      return;
+    }
+
+    setTimeout(() => {
+      fetchBookings(token);
+    }, 0);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.clear();
@@ -114,15 +121,37 @@ function UserDashboard() {
 
                 <p>🎟 Tickets: {b.ticketsCount}</p>
 
-                <span
-                  className={
-                    b.status === "Cancelled"
-                      ? "text-danger"
-                      : "text-success"
-                  }
-                >
-                  {b.status || "Confirmed"}
-                </span>
+                <div className="d-flex justify-content-between align-items-center mt-2">
+                  <span
+                    className={
+                      b.status === "Cancelled"
+                        ? "badge bg-danger"
+                        : b.status === "Paid"
+                        ? "badge bg-success"
+                        : "badge bg-warning text-dark"
+                    }
+                    style={{ padding: "4px 10px", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 600 }}
+                  >
+                    {b.status || "Booked"}
+                  </span>
+
+                  {b.status === "Booked" && (
+                    <Link
+                      to={`/payment/${b._id}`}
+                      className="btn btn-sm text-white"
+                      style={{
+                        background: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
+                        border: "none",
+                        borderRadius: "6px",
+                        fontWeight: 600,
+                        fontSize: "0.8rem",
+                        padding: "4px 12px"
+                      }}
+                    >
+                      💳 Pay Now
+                    </Link>
+                  )}
+                </div>
 
               </div>
             ))

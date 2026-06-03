@@ -1,24 +1,31 @@
+const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 const protect = async (req, res, next) => {
-  try {
-    // Automatically find or create a default user to bypass auth
-    let user = await User.findOne();
-    if (!user) {
-      user = await User.create({
-        name: "Demo Admin",
-        email: "demo@evinto.com",
-        password: "$2a$10$demohashedpasswordmock123", // mock hash
-        role: "admin"
-      });
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    try {
+      token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select("-password");
+
+      if (!req.user) {
+        return res.status(401).json({ message: "Not authorized, user not found" });
+      }
+
+      return next();
+    } catch (error) {
+      console.error("JWT verification error:", error);
+      return res.status(401).json({ message: "Not authorized, token failed" });
     }
-    
-    // Attach user to request so that controllers (like bookings) don't throw TypeErrors
-    req.user = user;
-    next();
-  } catch (error) {
-    console.error("Auth bypass middleware error:", error);
-    next();
+  }
+
+  if (!token) {
+    return res.status(401).json({ message: "Not authorized, no token" });
   }
 };
 

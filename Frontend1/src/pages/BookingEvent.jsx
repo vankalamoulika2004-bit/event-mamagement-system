@@ -12,11 +12,20 @@ function BookingEvent() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    tickets: 1,
+  const [form, setForm] = useState(() => {
+    let name = "";
+    let email = "";
+    const userStr = localStorage.getItem("user");
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        name = userData.name || "";
+        email = userData.email || "";
+      } catch (err) {
+        console.log("Error parsing user cache:", err);
+      }
+    }
+    return { name, email, phone: "", tickets: 1 };
   });
 
   // Fallbacks if backend event doesn't exist
@@ -56,46 +65,33 @@ function BookingEvent() {
       return;
     }
 
-    // Populate default details from logged in user if available
-    const userStr = localStorage.getItem("user");
-    if (userStr) {
+    function findFallback() {
+      const matched = fallbackEvents.find((evt) => evt.id === id);
+      setEvent(matched || fallbackEvents[0]);
+    }
+
+    async function fetchEvent() {
       try {
-        const userData = JSON.parse(userStr);
-        setForm((prev) => ({
-          ...prev,
-          name: userData.name || "",
-          email: userData.email || "",
-        }));
+        const res = await axios.get(
+          `http://localhost:8080/api/events/event/${id}`
+        );
+        if (res.data) {
+          setEvent(res.data);
+        } else {
+          findFallback();
+        }
       } catch (err) {
-        console.log("Error parsing user cache:", err);
-      }
-    }
-
-    fetchEvent();
-  }, [id, navigate]);
-
-  const fetchEvent = async () => {
-    try {
-      const res = await axios.get(
-        `http://localhost:8080/api/events/event/${id}`
-      );
-      if (res.data) {
-        setEvent(res.data);
-      } else {
+        console.log("Error querying event for booking, using fallback:", err);
         findFallback();
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.log("Error querying event for booking, using fallback:", err);
-      findFallback();
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const findFallback = () => {
-    const matched = fallbackEvents.find((evt) => evt.id === id);
-    setEvent(matched || fallbackEvents[0]);
-  };
+    setTimeout(() => {
+      fetchEvent();
+    }, 0);
+  }, [id, navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });

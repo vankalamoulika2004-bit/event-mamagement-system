@@ -12,11 +12,7 @@ function Events() {
   const [searchQuery, setSearchQuery] = useState(searchParamQuery);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
+  async function fetchEvents() {
     try {
       const res = await axios.get("http://localhost:8080/api/events");
       setEvents(res.data);
@@ -26,7 +22,13 @@ function Events() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchEvents();
+    }, 0);
+  }, []);
 
   // High-fidelity fallback events if backend is empty or offline
   const fallbackEvents = [

@@ -8,18 +8,7 @@ function MyBookings() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    fetchBookings();
-  }, [navigate]);
-
-  const fetchBookings = async () => {
+  async function fetchBookings() {
     const token = localStorage.getItem("token");
 
     try {
@@ -33,13 +22,26 @@ function MyBookings() {
       );
 
       setBookings(res.data);
-    } catch (err) {
+    } catch {
       console.log("Error loading bookings");
       setBookings([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    setTimeout(() => {
+      fetchBookings();
+    }, 0);
+  }, [navigate]);
 
   return (
     <div className="home-wrapper" style={{ paddingTop: "140px" }}>
@@ -70,15 +72,36 @@ function MyBookings() {
 
               <p>🎟 Tickets: {b.ticketsCount}</p>
 
-              <span
-                className={
-                  b.status === "Cancelled"
-                    ? "text-danger"
-                    : "text-success"
-                }
-              >
-                {b.status || "Confirmed"}
-              </span>
+              <div className="d-flex justify-content-between align-items-center mt-3">
+                <span
+                  className={
+                    b.status === "Cancelled"
+                      ? "badge bg-danger"
+                      : b.status === "Paid"
+                      ? "badge bg-success"
+                      : "badge bg-warning text-dark"
+                  }
+                  style={{ padding: "6px 12px", borderRadius: "8px", fontWeight: 600 }}
+                >
+                  {b.status || "Booked"}
+                </span>
+
+                {b.status === "Booked" && (
+                  <Link
+                    to={`/payment/${b._id}`}
+                    className="btn btn-sm text-white"
+                    style={{
+                      background: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontWeight: 600,
+                      padding: "6px 16px"
+                    }}
+                  >
+                    💳 Pay Now
+                  </Link>
+                )}
+              </div>
 
             </div>
           ))

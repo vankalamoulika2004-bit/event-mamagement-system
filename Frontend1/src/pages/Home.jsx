@@ -8,11 +8,7 @@ function Home() {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const fetchEvents = async () => {
+  async function fetchEvents() {
     try {
       const res = await axios.get("http://localhost:8080/api/events");
       // Pick first 3 events as featured ones
@@ -27,7 +23,13 @@ function Home() {
     } finally {
       setLoading(false);
     }
-  };
+  }
+
+  useEffect(() => {
+    setTimeout(() => {
+      fetchEvents();
+    }, 0);
+  }, []);
 
   // High-fidelity fallback events if backend is empty or offline
   const fallbackEvents = [

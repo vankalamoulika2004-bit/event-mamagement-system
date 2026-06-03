@@ -4,14 +4,34 @@ const paymentSchema = new mongoose.Schema(
   {
     booking: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Booking"
+      ref: "Booking",
+      required: true
     },
 
-    amount: Number,
+    amount: {
+      type: Number,
+      required: true
+    },
+
+    paymentMethod: {
+      type: String,
+      enum: ["Credit/Debit Card", "UPI", "Net Banking"],
+      required: true
+    },
+
+    cardDetails: {
+      cardNumber: String,
+      expiryDate: String,
+      cvv: String
+    },
+
+    upiId: String,
+
+    bankName: String,
 
     paymentStatus: {
       type: String,
-      default: "Pending"
+      default: "Successful"
     }
   },
   { timestamps: true }

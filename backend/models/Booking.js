@@ -4,12 +4,27 @@ const bookingSchema = new mongoose.Schema(
   {
     user: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User"
+      ref: "User",
+      required: true
     },
 
     event: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Event"
+      ref: "Event",
+      required: true
+    },
+
+    ticketsCount: {
+      type: Number,
+      default: 1
+    },
+
+    attendeeName: {
+      type: String
+    },
+
+    attendeePhone: {
+      type: String
     },
 
     status: {

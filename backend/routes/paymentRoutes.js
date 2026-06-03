@@ -1,13 +1,16 @@
 const express = require("express");
 
 const {
-  makePayment
+  savePayment
 } = require("../controllers/paymentController");
 
 const { protect } = require("../middleware/authMiddleware");
 
 const router = express.Router();
 
-router.post("/", protect, makePayment);
+router.get("/", (req, res) => {
+  res.send("Payment route");
+});
+router.post("/", protect, savePayment);
 
 module.exports = router;

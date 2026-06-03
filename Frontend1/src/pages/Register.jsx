@@ -28,7 +28,7 @@ function Register() {
     setSuccessMsg("");
 
     try {
-      const res = await axios.post(
+      await axios.post(
         "http://localhost:8080/api/auth/register",
         formData
       );
@@ -106,14 +106,6 @@ function Register() {
               onChange={handleChange}
               required
             />
-          </div>
-
-          <div>
-            <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Account Role</label>
-            <select name="role" value={formData.role} onChange={handleChange} className="form-control">
-              <option value="user">Standard User (Attendee)</option>
-              <option value="admin">Platform Administrator (Organizer)</option>
-            </select>
           </div>
 
           <button type="submit" disabled={loading}>

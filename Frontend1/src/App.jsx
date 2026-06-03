@@ -14,6 +14,7 @@ import UserDashboard from "./pages/UserDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import AddEvent from "./pages/AddEvent";
 import Contact from "./pages/Contact";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
@@ -28,12 +29,12 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/events" element={<Events />} />
         <Route path="/event/:id" element={<EventDetails />} />
-        <Route path="/bookingEvent/:id" element={<BookingEvent />} />
-        <Route path="/payment/:id" element={<Payment />} />
-        <Route path="/my-bookings" element={<MyBookings />} />
-        <Route path="/dashboard" element={<UserDashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/add-event" element={<AddEvent />} />
+        <Route path="/bookingEvent/:id" element={<ProtectedRoute><BookingEvent /></ProtectedRoute>} />
+        <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+        <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>} />
+        <Route path="/add-event" element={<ProtectedRoute adminOnly={true}><AddEvent /></ProtectedRoute>} />
         <Route path="/contact" element={<Contact />} />
       </Routes>
 
