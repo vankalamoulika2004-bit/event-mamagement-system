@@ -3,6 +3,34 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import "./Home.css"; // Reuse styling variables
 
+// Fallbacks if backend event doesn't exist
+const fallbackEvents = [
+  {
+    id: "fallback-1",
+    title: "Global Tech Summit 2026",
+    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
+    location: "San Francisco, CA",
+    date: "2026-06-15",
+    category: "Workshops",
+  },
+  {
+    id: "fallback-2",
+    title: "Summer Symphony Orchestra",
+    image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
+    location: "Symphony Hall, Boston",
+    date: "2026-07-08",
+    category: "Concerts",
+  },
+  {
+    id: "fallback-3",
+    title: "National Health & Wellness Expo",
+    image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=800&auto=format&fit=crop",
+    location: "Central Park, NY",
+    date: "2026-08-22",
+    category: "Health Camps",
+  },
+];
+
 function BookingEvent() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -27,34 +55,6 @@ function BookingEvent() {
     }
     return { name, email, phone: "", tickets: 1 };
   });
-
-  // Fallbacks if backend event doesn't exist
-  const fallbackEvents = [
-    {
-      id: "fallback-1",
-      title: "Global Tech Summit 2026",
-      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
-      location: "San Francisco, CA",
-      date: "2026-06-15",
-      category: "Workshops",
-    },
-    {
-      id: "fallback-2",
-      title: "Summer Symphony Orchestra",
-      image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
-      location: "Symphony Hall, Boston",
-      date: "2026-07-08",
-      category: "Concerts",
-    },
-    {
-      id: "fallback-3",
-      title: "National Health & Wellness Expo",
-      image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=800&auto=format&fit=crop",
-      location: "Central Park, NY",
-      date: "2026-08-22",
-      category: "Health Camps",
-    },
-  ];
 
   useEffect(() => {
     // Auth Check
