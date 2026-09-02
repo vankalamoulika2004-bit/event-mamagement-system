@@ -11,6 +11,8 @@ const router = express.Router();
 router.get("/", (req, res) => {
   res.send("Payment route");
 });
-router.post("/", protect, savePayment);
 
-module.exports = router;
+router.post("/", protect, savePayment);
+router.post("/savePayment", protect, savePayment);
+
+module.exports = router;

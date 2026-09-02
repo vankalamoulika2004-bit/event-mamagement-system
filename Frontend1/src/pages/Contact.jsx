@@ -1,6 +1,6 @@
 import { useState } from "react";
-import axios from "axios";
-import "./Home.css"; // Reuse variables
+import API from "../services/api";
+import "./Home.css";
 
 function Contact() {
   const [form, setForm] = useState({
@@ -24,18 +24,17 @@ function Contact() {
     setSuccess(false);
 
     try {
-      await axios.post("http://localhost:8080/api/contact", form);
+      await API.post("/contact", form);
       setSuccess(true);
       setForm({ name: "", email: "", subject: "", message: "" });
     } catch (err) {
-      console.log("Error sending contact message, using local simulation:", err);
-      // Simulate successful local fallback delivery
-      setSuccess(true);
-      setForm({ name: "", email: "", subject: "", message: "" });
+      console.log("Error sending contact message:", err);
+      setErrorMsg("Failed to send message. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="home-wrapper" style={{ paddingTop: "140px", paddingBottom: "100px" }}>

@@ -12,6 +12,7 @@ const { protect } = require("../middleware/authMiddleware");
 const router = express.Router();
 
 router.post("/", protect, createBooking);
+router.post("/bookEvent", protect, createBooking);
 
 router.get("/my", protect, getMyBookings);
 

@@ -1,35 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
-import "./Home.css"; // Reuse styling variables
-
-// Fallbacks if backend event doesn't exist
-const fallbackEvents = [
-  {
-    id: "fallback-1",
-    title: "Global Tech Summit 2026",
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
-    location: "San Francisco, CA",
-    date: "2026-06-15",
-    category: "Workshops",
-  },
-  {
-    id: "fallback-2",
-    title: "Summer Symphony Orchestra",
-    image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
-    location: "Symphony Hall, Boston",
-    date: "2026-07-08",
-    category: "Concerts",
-  },
-  {
-    id: "fallback-3",
-    title: "National Health & Wellness Expo",
-    image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=800&auto=format&fit=crop",
-    location: "Central Park, NY",
-    date: "2026-08-22",
-    category: "Health Camps",
-  },
-];
+import API from "../services/api";
+import "./Home.css";
 
 function BookingEvent() {
   const { id } = useParams();
@@ -57,7 +29,6 @@ function BookingEvent() {
   });
 
   useEffect(() => {
-    // Auth Check
     const token = localStorage.getItem("token");
     if (!token) {
       alert("⚠️ Authentication Required: Please sign in to book event seats!");
@@ -65,24 +36,13 @@ function BookingEvent() {
       return;
     }
 
-    function findFallback() {
-      const matched = fallbackEvents.find((evt) => evt.id === id);
-      setEvent(matched || fallbackEvents[0]);
-    }
-
     async function fetchEvent() {
       try {
-        const res = await axios.get(
-          `http://localhost:8080/api/events/event/${id}`
-        );
-        if (res.data) {
-          setEvent(res.data);
-        } else {
-          findFallback();
-        }
+        const res = await API.get(`/events/event/${id}`);
+        setEvent(res.data);
       } catch (err) {
-        console.log("Error querying event for booking, using fallback:", err);
-        findFallback();
+        console.log("Error querying event for booking:", err);
+        setErrorMsg("Failed to load event details.");
       } finally {
         setLoading(false);
       }
@@ -102,40 +62,19 @@ function BookingEvent() {
     setBookingLoading(true);
     setErrorMsg("");
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
     try {
-      // Send booking request to backend
-      const res = await axios.post(
-        "http://localhost:8080/api/bookings",
-        {
-          eventId: id,
-          ticketsCount: form.tickets,
-          attendeeName: form.name,
-          attendeePhone: form.phone,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res = await API.post("/bookings", {
+        eventId: id,
+        ticketsCount: Number(form.tickets),
+        attendeeName: form.name,
+        attendeePhone: form.phone,
+      });
 
-      // Successfully created booking! Take returned ID (or fallback)
-      const bookingId = res.data?._id || res.data?.id || `mock-${Date.now()}`;
-      
-      // Store dynamic booking details temporarily in state or navigate directly
-      navigate(`/payment/${bookingId}`, { state: { eventTitle: event.title, ticketsCount: form.tickets } });
+      const bookingId = res.data?._id || res.data?.id;
+      navigate(`/payment/${bookingId}`);
     } catch (err) {
       console.error(err);
-      // fallback mock behavior if backend has database lock issues
-      console.log("Creating local client booking fallback...");
-      const mockBookingId = `mock-booking-${Date.now()}`;
-      navigate(`/payment/${mockBookingId}`, { state: { eventTitle: event.title, ticketsCount: form.tickets } });
+      setErrorMsg(err.response?.data?.message || "Failed to create booking.");
     } finally {
       setBookingLoading(false);
     }
@@ -145,11 +84,23 @@ function BookingEvent() {
     return (
       <div className="home-wrapper d-flex align-items-center justify-content-center" style={{ minHeight: "100vh" }}>
         <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">Loading event...</span>
         </div>
       </div>
     );
   }
+
+  if (!event) {
+    return (
+      <div className="home-wrapper d-flex flex-column align-items-center justify-content-center" style={{ minHeight: "100vh" }}>
+        <h2>Event Not Found</h2>
+        <Link to="/events" className="btn-grad mt-3">Back to catalog</Link>
+      </div>
+    );
+  }
+
+  const ticketPrice = event.price || 0;
+  const totalAmount = ticketPrice * Number(form.tickets);
 
   return (
     <div className="home-wrapper" style={{ paddingTop: "140px", paddingBottom: "100px" }}>
@@ -160,12 +111,12 @@ function BookingEvent() {
       </div>
 
       <div className="container position-relative d-flex justify-content-center" style={{ zIndex: 2 }}>
-        <div className="glass-panel text-start p-4 p-md-5" style={{ width: "100%", maxWidth: "600px" }}>
+        <div className="glass-panel text-start p-4 p-md-5" style={{ width: "100%", maxWidth: "620px" }}>
           <div className="text-center mb-4">
             <span style={{ fontSize: "2.5rem" }}>🎟️</span>
             <h2 className="font-heading fw-bold mt-2" style={{ letterSpacing: "-0.5px" }}>Book Your Seat</h2>
             <p className="text-secondary" style={{ fontSize: "0.9rem" }}>
-              Secure tickets for the event in seconds.
+              Confirm your registration and proceed to secure payment.
             </p>
           </div>
 
@@ -182,12 +133,13 @@ function BookingEvent() {
               alt={event.title}
               style={{ width: "80px", height: "80px", objectFit: "cover", borderRadius: "10px" }}
             />
-            <div>
+            <div className="flex-grow-1">
               <h5 className="font-heading fw-bold mb-1" style={{ fontSize: "1.1rem" }}>{event.title}</h5>
-              <div className="text-secondary" style={{ fontSize: "0.82rem" }}>
-                📅 {event.date} <br />
+              <div className="text-secondary mb-1" style={{ fontSize: "0.82rem" }}>
+                📅 {event.date} • ⏰ {event.time || "10:00 AM"}<br />
                 📍 {event.location}
               </div>
+              <span className="badge bg-secondary">{event.category}</span>
             </div>
           </div>
 
@@ -198,94 +150,93 @@ function BookingEvent() {
           )}
 
           <form onSubmit={handleBooking}>
-            <div className="mb-3">
-              <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Attendee Name</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                placeholder="Enter full name"
-                required
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  margin: "8px 0 0 0",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid var(--glass-border)",
-                  color: "white",
-                  borderRadius: "10px",
-                }}
-              />
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Attendee Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  placeholder="Enter full name"
+                  required
+                  className="form-control mt-1"
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Email Address</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  placeholder="name@domain.com"
+                  required
+                  className="form-control mt-1"
+                />
+              </div>
             </div>
 
-            <div className="mb-3">
-              <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Email Address</label>
-              <input
-                type="email"
-                name="email"
-                value={form.email}
-                onChange={handleChange}
-                placeholder="name@domain.com"
-                required
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  margin: "8px 0 0 0",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid var(--glass-border)",
-                  color: "white",
-                  borderRadius: "10px",
-                }}
-              />
+            <div className="row mb-3">
+              <div className="col-md-6">
+                <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Phone Number</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  placeholder="+91 XXXXX XXXXX"
+                  required
+                  className="form-control mt-1"
+                />
+              </div>
+
+              <div className="col-md-6">
+                <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Number of Tickets</label>
+                <select
+                  name="tickets"
+                  value={form.tickets}
+                  onChange={handleChange}
+                  className="form-control mt-1"
+                >
+                  <option value="1">1 Ticket</option>
+                  <option value="2">2 Tickets</option>
+                  <option value="3">3 Tickets</option>
+                  <option value="4">4 Tickets</option>
+                  <option value="5">5 Tickets</option>
+                </select>
+              </div>
             </div>
 
-            <div className="mb-3">
-              <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Phone Number</label>
-              <input
-                type="tel"
-                name="phone"
-                value={form.phone}
-                onChange={handleChange}
-                placeholder="+91 XXXXX XXXXX"
-                required
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  margin: "8px 0 0 0",
-                  background: "rgba(255, 255, 255, 0.04)",
-                  border: "1px solid var(--glass-border)",
-                  color: "white",
-                  borderRadius: "10px",
-                }}
-              />
-            </div>
-
-            <div className="mb-4">
-              <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Number of Seats (Tickets)</label>
-              <select
-                name="tickets"
-                value={form.tickets}
-                onChange={handleChange}
-                style={{
-                  width: "100%",
-                  padding: "12px 16px",
-                  margin: "8px 0 0 0",
-                  background: "rgba(7, 7, 18, 0.95)",
-                  border: "1px solid var(--glass-border)",
-                  color: "white",
-                  borderRadius: "10px",
-                }}
-              >
-                <option value="1">1 Seat</option>
-                <option value="2">2 Seats</option>
-                <option value="3">3 Seats</option>
-                <option value="4">4 Seats</option>
-              </select>
+            {/* Price Breakdown Calculation Display */}
+            <div
+              className="p-3 mb-4"
+              style={{
+                background: "rgba(16, 185, 129, 0.05)",
+                border: "1px solid rgba(16, 185, 129, 0.2)",
+                borderRadius: "12px"
+              }}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-1">
+                <span className="text-secondary" style={{ fontSize: "0.88rem" }}>Ticket Price (From Database):</span>
+                <span className="fw-bold">₹{ticketPrice}</span>
+              </div>
+              <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="text-secondary" style={{ fontSize: "0.88rem" }}>Quantity Selected:</span>
+                <span className="fw-bold">{form.tickets}</span>
+              </div>
+              <hr style={{ borderColor: "rgba(255,255,255,0.1)", margin: "8px 0" }} />
+              <div className="d-flex justify-content-between align-items-center">
+                <span className="fw-bold" style={{ fontSize: "1rem" }}>Calculated Total Amount:</span>
+                <span className="font-heading fw-bold text-success" style={{ fontSize: "1.4rem" }}>
+                  ₹{totalAmount}
+                </span>
+              </div>
             </div>
 
             <button type="submit" disabled={bookingLoading} className="btn-grad w-100 py-3 text-center justify-content-center">
-              {bookingLoading ? "Registering seat..." : "PROCEED TO SECURE GATEWAY &rarr;"}
+              {bookingLoading ? "Creating booking..." : `PROCEED TO PAY ₹${totalAmount} &rarr;`}
             </button>
 
             <div className="text-center mt-3">

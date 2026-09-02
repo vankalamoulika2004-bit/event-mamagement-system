@@ -25,6 +25,13 @@ app.use("/api/bookings", require("./routes/bookingRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 
+app.post("/api/contact", (req, res) => {
+  const { name, email, subject, message } = req.body;
+  console.log(`[Contact] From: ${name} <${email}> | Subject: ${subject}`);
+  res.status(200).json({ success: true, message: "Message received successfully" });
+});
+
+
 const PORT = process.env.PORT || 8080;
 
 app.listen(PORT, () => {

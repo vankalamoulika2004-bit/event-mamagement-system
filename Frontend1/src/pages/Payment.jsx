@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 import "./Home.css";
 
 function Payment() {
@@ -11,6 +11,7 @@ function Payment() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [txnId, setTxnId] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
   // Payment Form States
@@ -37,11 +38,7 @@ function Payment() {
       }
 
       try {
-        const res = await axios.get(`http://localhost:8080/api/bookings/${id}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const res = await API.get(`/bookings/${id}`);
         setBooking(res.data);
       } catch (err) {
         console.error("Error loading booking details for checkout:", err);
@@ -104,27 +101,19 @@ function Payment() {
     if (!validateForm()) return;
 
     setProcessing(true);
-    const token = localStorage.getItem("token");
-    const totalAmount = (booking?.event?.price || 0) * (booking?.ticketsCount || 1);
 
     try {
-      await axios.post(
-        "http://localhost:8080/api/payments",
-        {
-          bookingId: id,
-          amount: totalAmount,
-          paymentMethod,
-          cardDetails: paymentMethod === "Credit/Debit Card" ? cardDetails : undefined,
-          upiId: paymentMethod === "UPI" ? upiId : undefined,
-          bankName: paymentMethod === "Net Banking" ? bankName : undefined
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
-        }
-      );
+      const res = await API.post("/payments/savePayment", {
+        bookingId: id,
+        paymentMethod,
+        cardDetails: paymentMethod === "Credit/Debit Card" ? cardDetails : undefined,
+        upiId: paymentMethod === "UPI" ? upiId : undefined,
+        bankName: paymentMethod === "Net Banking" ? bankName : undefined
+      });
 
+      if (res.data?.payment?.transactionId) {
+        setTxnId(res.data.payment.transactionId);
+      }
       setSuccess(true);
     } catch (err) {
       console.error(err);
@@ -160,7 +149,7 @@ function Payment() {
         <div className="glass-panel text-start p-4 p-md-5" style={{ width: "100%", maxWidth: "600px" }}>
           
           {success ? (
-            <div className="text-center py-5">
+            <div className="text-center py-4">
               <div
                 className="bg-success text-white d-inline-flex align-items-center justify-content-center mb-4"
                 style={{
@@ -176,15 +165,16 @@ function Payment() {
 
               <h2 className="font-heading fw-bold">Payment Successful!</h2>
               <p className="text-secondary mt-2">
-                Your transaction has been recorded. Seats are officially secured for: <br />
+                Your transaction has been recorded. Seats are officially confirmed for: <br />
                 <strong className="text-white" style={{ fontSize: "1.1rem" }}>{booking?.event?.title}</strong>
               </p>
 
               <div className="glass-panel p-3 my-4 text-start" style={{ background: "rgba(255, 255, 255, 0.02)" }}>
+                <div><strong>Transaction ID:</strong> <span className="text-info">{txnId || `TXN_${Date.now()}`}</span></div>
                 <div><strong>Attendee:</strong> {booking?.attendeeName || booking?.user?.name}</div>
-                <div><strong>Tickets:</strong> {ticketsCount} Seat(s)</div>
-                <div><strong>Amount Paid:</strong> ₹{totalAmount}</div>
-                <div><strong>Method:</strong> {paymentMethod}</div>
+                <div><strong>Tickets:</strong> {ticketsCount} Ticket(s)</div>
+                <div><strong>Total Paid:</strong> ₹{totalAmount}</div>
+                <div><strong>Payment Mode:</strong> {paymentMethod}</div>
               </div>
 
               <Link to="/my-bookings" className="btn-grad mt-3 d-inline-block text-decoration-none py-3 px-5">
@@ -195,7 +185,7 @@ function Payment() {
             <form onSubmit={handlePayment}>
               <div className="text-center mb-4">
                 <span style={{ fontSize: "2.5rem" }}>🔒</span>
-                <h2 className="font-heading fw-bold mt-2" style={{ letterSpacing: "-0.5px" }}>Secure Gateway Checkout</h2>
+                <h2 className="font-heading fw-bold mt-2" style={{ letterSpacing: "-0.5px" }}>Secure Payment Checkout</h2>
                 <p className="text-secondary" style={{ fontSize: "0.9rem" }}>
                   Complete booking payments with end-to-end encryption.
                 </p>
@@ -211,7 +201,7 @@ function Payment() {
                 }}
               >
                 <h5 className="font-heading fw-bold mb-3 text-pink" style={{ color: "var(--accent-pink)" }}>
-                  📝 Booking Details
+                  📝 Booking Details & Summary
                 </h5>
                 <div className="row g-2" style={{ fontSize: "0.9rem", color: "#cbd5e1" }}>
                   <div className="col-6"><strong>Event Name:</strong></div>
@@ -221,7 +211,7 @@ function Payment() {
                   <div className="col-6 text-white text-end">{ticketsCount} Ticket(s)</div>
 
                   <div className="col-6"><strong>User Name:</strong></div>
-                  <div className="col-6 text-white text-end">{booking?.user?.name}</div>
+                  <div className="col-6 text-white text-end">{booking?.attendeeName || booking?.user?.name}</div>
 
                   <div className="col-6"><strong>User Email:</strong></div>
                   <div className="col-6 text-white text-end">{booking?.user?.email}</div>
@@ -234,14 +224,14 @@ function Payment() {
                   <div className="col-12"><hr className="my-2" style={{ borderColor: "rgba(255,255,255,0.08)" }} /></div>
 
                   <div className="col-6" style={{ fontSize: "1.05rem", fontWeight: 700 }}>Total Amount:</div>
-                  <div className="col-6 text-white text-end fw-bold" style={{ fontSize: "1.05rem" }}>
+                  <div className="col-6 text-success text-end fw-bold" style={{ fontSize: "1.25rem" }}>
                     ₹{totalAmount}
                   </div>
                 </div>
               </div>
 
               {errorMsg && (
-                <div className="alert alert-danger py-2 text-center" style={{ fontSize: "0.85rem", borderRadius: "8px" }}>
+                <div className="alert alert-danger py-2 text-center mb-3" style={{ fontSize: "0.85rem", borderRadius: "8px" }}>
                   ⚠️ {errorMsg}
                 </div>
               )}
@@ -289,7 +279,6 @@ function Payment() {
                       maxLength="19"
                       value={cardDetails.cardNumber}
                       onChange={(e) => {
-                        // format with spaces
                         const val = e.target.value.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim();
                         setCardDetails({ ...cardDetails, cardNumber: val });
                       }}

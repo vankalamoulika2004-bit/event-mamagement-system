@@ -1,24 +1,24 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
+import API from "../services/api";
 import "./Home.css";
 
 function Home() {
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   async function fetchEvents() {
     try {
-      const res = await axios.get("http://localhost:8080/api/events");
-      // Pick first 3 events as featured ones
+      const res = await API.get("/events");
       if (Array.isArray(res.data) && res.data.length > 0) {
         setEvents(res.data.slice(0, 3));
       } else {
         setEvents([]);
       }
     } catch (error) {
-      console.log("Error fetching events, using fallbacks:", error);
+      console.log("Error fetching events:", error);
       setEvents([]);
     } finally {
       setLoading(false);
@@ -31,44 +31,15 @@ function Home() {
     }, 0);
   }, []);
 
-  // High-fidelity fallback events if backend is empty or offline
-  const fallbackEvents = [
-    {
-      id: "fallback-1",
-      title: "Global Tech Summit 2026",
-      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
-      description: "Join tech pioneers and global innovators to discuss generative intelligence, autonomous agents, and next-gen cloud structures.",
-      location: "San Francisco, CA",
-      date: "June 15, 2026",
-      category: "Workshops",
-    },
-    {
-      id: "fallback-2",
-      title: "Summer Symphony Orchestra",
-      image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
-      description: "Experience a breathtaking evening of classical symphonies and modern arrangements under the starry Boston sky.",
-      location: "Symphony Hall, Boston",
-      date: "July 08, 2026",
-      category: "Concerts",
-    },
-    {
-      id: "fallback-3",
-      title: "National Health & Wellness Expo",
-      image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q=80&w=800&auto=format&fit=crop",
-      description: "Access free health diagnostics, professional wellness workshops, nutrition guidance, and yoga masterclasses.",
-      location: "Central Park, NY",
-      date: "August 22, 2026",
-      category: "Health Camps",
-    },
-  ];
-
-  const displayedEvents = events.length > 0 ? events : fallbackEvents;
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
-    // Redirect to events page with query parameter if desired, or standard events page
-    window.location.href = `/events?search=${encodeURIComponent(searchQuery)}`;
+    if (searchQuery.trim()) {
+      navigate(`/events?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      navigate("/events");
+    }
   };
+
 
   return (
     <div className="home-wrapper">
@@ -243,30 +214,48 @@ function Home() {
               <span className="visually-hidden">Loading...</span>
             </div>
           </div>
+        ) : events.length === 0 ? (
+          <div className="text-center py-4 text-secondary">No featured events found.</div>
         ) : (
           <div className="events-flex-grid">
-            {displayedEvents.map((event) => (
-              <div className="glass-panel premium-event-card" key={event.id || event._id}>
-                <div className="event-img-wrapper">
+            {events.map((event) => (
+              <div className="glass-panel premium-event-card d-flex flex-column" key={event._id || event.id}>
+                <div className="event-img-wrapper" style={{ position: "relative" }}>
                   <img src={event.image} alt={event.title} />
                   <span className="event-category-tag">{event.category || "Featured"}</span>
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "12px",
+                      right: "12px",
+                      background: "rgba(16, 185, 129, 0.9)",
+                      color: "#fff",
+                      fontWeight: 800,
+                      fontSize: "0.85rem",
+                      padding: "4px 12px",
+                      borderRadius: "100px",
+                      backdropFilter: "blur(10px)"
+                    }}
+                  >
+                    ₹{event.price}
+                  </span>
                 </div>
-                <div className="event-card-body text-start">
-                  <div className="event-date-loc">
+                <div className="event-card-body text-start d-flex flex-column flex-grow-1">
+                  <div className="event-date-loc mb-2" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
                     <span>📅 {event.date}</span>
                     <span>📍 {event.location}</span>
                   </div>
-                  <h3 className="event-card-title">{event.title}</h3>
-                  <p className="event-card-desc">
-                    {event.description && event.description.length > 120
-                      ? `${event.description.substring(0, 115)}...`
+                  <h3 className="event-card-title mb-2">{event.title}</h3>
+                  <p className="event-card-desc flex-grow-1">
+                    {event.description && event.description.length > 115
+                      ? `${event.description.substring(0, 110)}...`
                       : event.description}
                   </p>
-                  <div className="event-card-footer">
-                    <Link to={`/event/${event.id || event._id}`} className="event-btn-detail">
+                  <div className="event-card-footer mt-auto pt-3">
+                    <Link to={`/event/${event._id || event.id}`} className="event-btn-detail">
                       More Details
                     </Link>
-                    <Link to={`/bookingEvent/${event.id || event._id}`} className="event-btn-book">
+                    <Link to={`/bookingEvent/${event._id || event.id}`} className="event-btn-book">
                       Book Seat
                     </Link>
                   </div>
@@ -275,6 +264,7 @@ function Home() {
             ))}
           </div>
         )}
+
       </section>
 
       {/* 5. Features & Core Value Section */}

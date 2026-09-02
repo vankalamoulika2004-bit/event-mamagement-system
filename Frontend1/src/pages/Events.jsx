@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import axios from "axios";
-import "./Home.css"; // Reuse premium variables
+import API from "../services/api";
+import "./Home.css";
 
 function Events() {
   const [events, setEvents] = useState([]);
@@ -14,7 +14,7 @@ function Events() {
 
   async function fetchEvents() {
     try {
-      const res = await axios.get("http://localhost:8080/api/events");
+      const res = await API.get("/events");
       setEvents(res.data);
     } catch (error) {
       console.log("Error fetching events:", error);
@@ -30,83 +30,50 @@ function Events() {
     }, 0);
   }, []);
 
-  // High-fidelity fallback events if backend is empty or offline
-  const fallbackEvents = [
-    {
-      id: "fallback-1",
-      title: "Global Tech Summit 2026",
-      image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?q=80&w=800&auto=format&fit=crop",
-      description: "Join tech pioneers and global innovators to discuss generative intelligence, autonomous agents, and next-gen cloud structures.",
-      location: "San Francisco, CA",
-      date: "2026-06-15",
-      category: "Workshops",
-    },
-    {
-      id: "fallback-2",
-      title: "Summer Symphony Orchestra",
-      image: "https://images.unsplash.com/photo-1465847899084-d164df4dedc6?q=80&w=800&auto=format&fit=crop",
-      description: "Experience a breathtaking evening of classical symphonies and modern arrangements under the starry Boston sky.",
-      location: "Symphony Hall, Boston",
-      date: "2026-07-08",
-      category: "Concerts",
-    },
-    {
-      id: "fallback-3",
-      title: "health camps",
-      image: "https://images.unsplash.com/photo-1505751172876-fa1923c5c528?q",
-      description: "Access free health diagnostics, professional wellness workshops, nutrition guidance, and yoga masterclasses.",
-      location: "Central Park, NY",
-      date: "2026-08-22",
-      category: "Health Camps",
-    },
-    {
-      id: "fallback-4",
-      title: "Decentralized Startup Summit",
-      image: "https://images.unsplash.com/photo-1515187029135-18ee286d815b?q=80&w=800&auto=format&fit=crop",
-      description: "Accelerate your project with Venture Capitalist panels, investment roundtables, pitch boards, and incubator connections.",
-      location: "Silicon Valley, CA",
-      date: "2026-09-10",
-      category: "Seminars",
-    },
-    {
-      id: "fallback-5",
-      title: "Elysium College Carnivals",
-      image: "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?q=80&w=800&auto=format&fit=crop",
-      description: "Join the ultimate collegiate celebration with live concerts, inter-college drama stages, competitive sports, and DJ night.",
-      location: "State University Gym",
-      date: "2026-10-04",
-      category: "College Fests",
-    },
-    {
-      id: "fallback-6",
-      title: "Tree plantation drive",
-      image: "https://media.istockphoto.com/id/2221018480/photo/two-people-are-planting-a-tree-in-the-dirt.webp?a=1&b=1&s=612x612&w=0&k=20&c=_CCyjgyhw0tFf0Dl8OGZlXizCr7QOuGwXO7ujY8zEzM=",
-      description: "a collaborative community initiative aimed at planting saplings to combat climate change, restore ecosystems, and promote environmental awareness.",
-      location: "Aditya Institute Techonology And Management",
-      date: "2026-11-04",
-      category: "Tree plantation",
-    }
+  const categories = [
+    "All",
+    "Cultural",
+    "Technical",
+    "Academic",
+    "Sports",
+    "Arts & Literature",
+    "Social & Environmental"
   ];
 
-  const allEvents = events.length > 0 ? events : fallbackEvents;
+  // Category matching helper
+  const matchesCategoryTag = (eventCat, selectedCat) => {
+    if (selectedCat === "All") return true;
+    if (!eventCat) return false;
+    const catLower = eventCat.toLowerCase();
+    switch (selectedCat) {
+      case "Cultural":
+        return catLower.includes("cultural");
+      case "Technical":
+        return catLower.includes("technical");
+      case "Academic":
+        return catLower.includes("academic");
+      case "Sports":
+        return catLower.includes("sports");
+      case "Arts & Literature":
+        return catLower.includes("arts") || catLower.includes("literature");
+      case "Social & Environmental":
+        return catLower.includes("social") || catLower.includes("environmental");
+      default:
+        return catLower.includes(selectedCat.toLowerCase());
+    }
+  };
 
   // Filter events based on search query and category tab
-  const filteredEvents = allEvents.filter((event) => {
+  const filteredEvents = events.filter((event) => {
     const matchesSearch =
       event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (event.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesCategory =
-      selectedCategory === "All" ||
-      (event.category && event.category.toLowerCase() === selectedCategory.toLowerCase()) ||
-      // Handle fallback category tags vs exact matches
-      (event.category === undefined && selectedCategory === "Workshops");
+    const matchesCat = matchesCategoryTag(event.category, selectedCategory);
 
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCat;
   });
-
-  const categories = ["All", "Workshops", "Concerts", "Seminars", "Health Camps", "College Fests"];
 
   return (
     <div
@@ -124,10 +91,10 @@ function Events() {
 
       <div className="container position-relative" style={{ zIndex: 2 }}>
         <div className="text-center mb-5">
-          <div className="section-tag">Catalog</div>
-          <h1 className="section-title">Sparkling Occasions</h1>
+          <div className="section-tag">College Catalog</div>
+          <h1 className="section-title">Evinto Events Directory</h1>
           <p className="section-subtitle" style={{ marginBottom: "30px" }}>
-            Explore workshops, executive summits, medical gatherings, and cultural stages. Filter and book your tickets instantly.
+            Explore Cultural, Technical, Academic, Sports, Arts, and Environmental competitions. Filter and book your seats instantly.
           </p>
 
           {/* Search bar console */}
@@ -140,7 +107,7 @@ function Events() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search event title, venue, descriptors..."
+                placeholder="Search by event name, location, keyword..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -180,18 +147,6 @@ function Events() {
                   transition: "all 0.3s ease",
                   boxShadow: selectedCategory === cat ? "0 4px 15px rgba(168, 85, 247, 0.35)" : "none",
                 }}
-                onMouseEnter={(e) => {
-                  if (selectedCategory !== cat) {
-                    e.target.style.background = "rgba(255,255,255,0.09)";
-                    e.target.style.borderColor = "var(--glass-border-hover)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (selectedCategory !== cat) {
-                    e.target.style.background = "rgba(255,255,255,0.04)";
-                    e.target.style.borderColor = "var(--glass-border)";
-                  }
-                }}
               >
                 {cat}
               </button>
@@ -202,7 +157,7 @@ function Events() {
         {loading ? (
           <div className="text-center py-5">
             <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
+              <span className="visually-hidden">Loading events...</span>
             </div>
           </div>
         ) : filteredEvents.length === 0 ? (
@@ -210,33 +165,50 @@ function Events() {
             <span style={{ fontSize: "3rem" }}>🧐</span>
             <h3 className="mt-3 font-heading" style={{ fontWeight: 800 }}>No Events Found</h3>
             <p className="text-secondary mt-2 mb-0">
-              We couldn't find any events matching your search or category choice. Try checking spelling or using a different tab!
+              We couldn't find any events matching your search or category choice. Try selecting a different tab!
             </p>
           </div>
         ) : (
           <div className="events-flex-grid">
             {filteredEvents.map((event) => (
-              <div className="glass-panel premium-event-card" key={event.id || event._id}>
-                <div className="event-img-wrapper">
+              <div className="glass-panel premium-event-card d-flex flex-column" key={event._id || event.id}>
+                <div className="event-img-wrapper" style={{ position: "relative" }}>
                   <img src={event.image} alt={event.title} />
-                  <span className="event-category-tag">{event.category || "Featured"}</span>
+                  <span className="event-category-tag">{event.category || "General"}</span>
+                  <span
+                    style={{
+                      position: "absolute",
+                      bottom: "12px",
+                      right: "12px",
+                      background: "rgba(16, 185, 129, 0.9)",
+                      color: "#fff",
+                      fontWeight: 800,
+                      fontSize: "0.88rem",
+                      padding: "4px 12px",
+                      borderRadius: "100px",
+                      backdropFilter: "blur(10px)"
+                    }}
+                  >
+                    ₹{event.price}
+                  </span>
                 </div>
-                <div className="event-card-body text-start">
-                  <div className="event-date-loc">
+                <div className="event-card-body text-start d-flex flex-column flex-grow-1">
+                  <div className="event-date-loc mb-2" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
                     <span>📅 {event.date}</span>
+                    <span>⏰ {event.time || "10:00 AM"}</span>
                     <span>📍 {event.location}</span>
                   </div>
-                  <h3 className="event-card-title">{event.title}</h3>
-                  <p className="event-card-desc">
-                    {event.description && event.description.length > 120
-                      ? `${event.description.substring(0, 115)}...`
+                  <h3 className="event-card-title mb-2">{event.title}</h3>
+                  <p className="event-card-desc flex-grow-1">
+                    {event.description && event.description.length > 110
+                      ? `${event.description.substring(0, 105)}...`
                       : event.description}
                   </p>
-                  <div className="event-card-footer">
-                    <Link to={`/event/${event.id || event._id}`} className="event-btn-detail">
+                  <div className="event-card-footer mt-auto pt-3">
+                    <Link to={`/event/${event._id || event.id}`} className="event-btn-detail">
                       More Details
                     </Link>
-                    <Link to={`/bookingEvent/${event.id || event._id}`} className="event-btn-book">
+                    <Link to={`/bookingEvent/${event._id || event.id}`} className="event-btn-book">
                       Book Seat
                     </Link>
                   </div>
