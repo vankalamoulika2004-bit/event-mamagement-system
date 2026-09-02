@@ -1,24 +1,46 @@
 const Booking = require("../models/Booking");
+const Event = require("../models/Event");
 
 const createBooking = async (req, res) => {
-  const { eventId, ticketsCount, attendeeName, attendeePhone } = req.body;
-  const booking = await Booking.create({
-    user: req.user._id,
-    event: eventId,
-    ticketsCount: ticketsCount || 1,
-    attendeeName,
-    attendeePhone
-  });
+  try {
+    const { eventId, ticketsCount, attendeeName, attendeePhone } = req.body;
 
-  res.status(201).json(booking);
+    if (!eventId) {
+      return res.status(400).json({ message: "Event ID is required" });
+    }
+
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ message: "Event not found" });
+    }
+
+    const validTicketsCount = Math.max(1, parseInt(ticketsCount) || 1);
+
+    const booking = await Booking.create({
+      user: req.user._id,
+      event: event._id,
+      ticketsCount: validTicketsCount,
+      attendeeName: attendeeName || req.user.name,
+      attendeePhone: attendeePhone || ""
+    });
+
+    res.status(201).json(booking);
+  } catch (error) {
+    console.error("Create Booking Error:", error);
+    res.status(500).json({ message: error.message || "Failed to create booking" });
+  }
 };
 
 const getMyBookings = async (req, res) => {
-  const bookings = await Booking.find({
-    user: req.user._id
-  }).populate("event");
+  try {
+    const bookings = await Booking.find({
+      user: req.user._id
+    }).populate("event");
 
-  res.json(bookings);
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 const getBookingById = async (req, res) => {
@@ -43,15 +65,26 @@ const getBookingById = async (req, res) => {
 };
 
 const cancelBooking = async (req, res) => {
-  const booking = await Booking.findById(req.params.id);
+  try {
+    const booking = await Booking.findById(req.params.id);
 
-  booking.status = "Cancelled";
+    if (!booking) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
 
-  await booking.save();
+    if (booking.user.toString() !== req.user._id.toString() && req.user.role !== "admin") {
+      return res.status(403).json({ message: "Not authorized to cancel this booking" });
+    }
 
-  res.json({
-    message: "Booking cancelled"
-  });
+    booking.status = "Cancelled";
+    await booking.save();
+
+    res.json({
+      message: "Booking cancelled successfully"
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 module.exports = {
@@ -59,4 +92,4 @@ module.exports = {
   getMyBookings,
   getBookingById,
   cancelBooking
-};
+};

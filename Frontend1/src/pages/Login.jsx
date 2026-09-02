@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,9 +14,15 @@ const Login = () => {
     setLoading(true);
     setErrorMsg("");
 
+    if (!email.trim() || !password) {
+      setErrorMsg("Please enter both email and password.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const res = await axios.post("http://localhost:8080/api/auth/login", {
-        email,
+      const res = await API.post("/auth/login", {
+        email: email.trim(),
         password,
       });
 
@@ -34,9 +40,9 @@ const Login = () => {
         navigate("/dashboard");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Login error:", error);
       setErrorMsg(
-        error.response?.data?.message || "Invalid Credentials. Please check and try again."
+        error.response?.data?.message || "Invalid credentials. Please check your email and password."
       );
     } finally {
       setLoading(false);
@@ -85,7 +91,7 @@ const Login = () => {
           </div>
 
           <button type="submit" disabled={loading}>
-            {loading ? "Authenticating..." : "Sign In &rarr;"}
+            {loading ? "Authenticating..." : "Sign In \u2192"}
           </button>
 
           <div className="text-center mt-4" style={{ fontSize: "0.88rem", color: "#94a3b8" }}>

@@ -20,7 +20,7 @@ router.get("/event/:id", getSingleEvent);
 
 router.post("/event", protect, admin, createEvent);
 
-router.put("updateEvent/:id", protect, admin, updateEvent);
+router.put("/updateEvent/:id", protect, admin, updateEvent);
 
 router.delete("/deleteEvent/:id", protect, admin, deleteEvent);
 

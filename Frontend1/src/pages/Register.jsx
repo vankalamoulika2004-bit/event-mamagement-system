@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios";
+import API from "../services/api";
 
 function Register() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
-    role: "user",
+    confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -27,20 +27,47 @@ function Register() {
     setErrorMsg("");
     setSuccessMsg("");
 
+    // Field Validations
+    if (!formData.name.trim() || !formData.email.trim() || !formData.password || !formData.confirmPassword) {
+      setErrorMsg("Please fill in all required fields.");
+      setLoading(false);
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email.trim())) {
+      setErrorMsg("Please enter a valid email address.");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters long.");
+      setLoading(false);
+      return;
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMsg("Passwords do not match. Please check and try again.");
+      setLoading(false);
+      return;
+    }
+
     try {
-      await axios.post(
-        "http://localhost:8080/api/auth/register",
-        formData
-      );
+      await API.post("/auth/register", {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        password: formData.password,
+      });
 
       setSuccessMsg("Registration successful! Redirecting to login...");
       setTimeout(() => {
         navigate("/login");
-      }, 2000);
+      }, 1500);
     } catch (error) {
-      console.error(error);
+      console.error("Registration error:", error);
       setErrorMsg(
-        error.response?.data?.message || "Something went wrong. Please check fields and try again."
+        error.response?.data?.message || "Registration failed. Please check your details and try again."
       );
     } finally {
       setLoading(false);
@@ -108,8 +135,20 @@ function Register() {
             />
           </div>
 
+          <div>
+            <label style={{ fontSize: "0.85rem", fontWeight: 600, color: "#cbd5e1" }}>Confirm Password</label>
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="••••••••"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
           <button type="submit" disabled={loading}>
-            {loading ? "Registering..." : "Create Account &rarr;"}
+            {loading ? "Registering..." : "Create Account \u2192"}
           </button>
 
           <div className="text-center mt-4" style={{ fontSize: "0.88rem", color: "#94a3b8" }}>
