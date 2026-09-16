@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Booking = require("../models/Booking");
 const Event = require("../models/Event");
 
@@ -5,8 +6,8 @@ const createBooking = async (req, res) => {
   try {
     const { eventId, ticketsCount, attendeeName, attendeePhone } = req.body;
 
-    if (!eventId) {
-      return res.status(400).json({ message: "Event ID is required" });
+    if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "A valid Event ID is required" });
     }
 
     const event = await Event.findById(eventId);
@@ -59,6 +60,10 @@ const getMyBookings = async (req, res) => {
 
 const getBookingById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
     const booking = await Booking.findById(req.params.id)
       .populate("event")
       .populate("user", "name email");
@@ -80,6 +85,10 @@ const getBookingById = async (req, res) => {
 
 const cancelBooking = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
     const booking = await Booking.findById(req.params.id);
 
     if (!booking) {
@@ -107,4 +116,5 @@ module.exports = {
   getMyBookings,
   getBookingById,
   cancelBooking
-};
+};
+

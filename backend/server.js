@@ -5,7 +5,11 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const dns = require("dns");
 
-dns.setServers(["8.8.8.8", "1.1.1.1"]);
+try {
+  dns.setServers(["8.8.8.8", "1.1.1.1"]);
+} catch (dnsErr) {
+  console.warn("Could not set custom DNS servers:", dnsErr.message);
+}
 
 dotenv.config({ path: path.join(__dirname, ".env") });
 
@@ -33,23 +37,60 @@ app.post("/api/contact", (req, res) => {
   res.status(200).json({ success: true, message: "Message received successfully" });
 });
 
+// 404 handler for unmatched routes (returns JSON instead of HTML)
+app.use((req, res) => {
+  res.status(404).json({ message: `Route not found: ${req.method} ${req.originalUrl}` });
+});
+
 // Central error handling middleware
 app.use((err, req, res, next) => {
   console.error("Express Error:", err.stack || err);
   res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
 });
 
+// Global process error handlers
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err);
+});
+
+const gracefulShutdown = async () => {
+  console.log("Shutting down gracefully...");
+  try {
+    await mongoose.connection.close();
+  } catch (e) {
+    console.error("Error closing database connection:", e);
+  }
+  process.exit(0);
+};
+
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
+
 const PORT = process.env.PORT || 8080;
 
 const startServer = async () => {
   try {
     await connectDB();
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+    });
+
+    server.on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.error(`Port ${PORT} is already in use. Another server instance is likely running.`);
+        process.exit(1);
+      } else {
+        console.error("Server error:", err);
+      }
     });
   } catch (err) {
     console.error("Failed to initialize server:", err);
   }
 };
 
-startServer();
+startServer();
+

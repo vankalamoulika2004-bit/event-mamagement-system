@@ -1,3 +1,4 @@
+const mongoose = require("mongoose");
 const Payment = require("../models/Payment");
 const Booking = require("../models/Booking");
 
@@ -5,9 +6,10 @@ const savePayment = async (req, res) => {
   try {
     const { bookingId, paymentMethod, cardDetails, upiId, bankName } = req.body;
 
-    if (!bookingId || !paymentMethod) {
-      return res.status(400).json({ message: "Missing required payment fields" });
+    if (!bookingId || !mongoose.Types.ObjectId.isValid(bookingId) || !paymentMethod) {
+      return res.status(400).json({ message: "A valid bookingId and paymentMethod are required" });
     }
+
 
     // Fetch booking and populate event
     const booking = await Booking.findById(bookingId).populate("event");
