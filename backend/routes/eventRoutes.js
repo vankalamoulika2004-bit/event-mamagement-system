@@ -14,14 +14,14 @@ const admin = require("../middleware/adminMiddleware");
 
 const router = express.Router();
 
-router.get("/", getEvents);
+router.get(["/", "/all"], getEvents);
 
-router.get("/event/:id", getSingleEvent);
+router.get(["/:id", "/event/:id"], getSingleEvent);
 
-router.post("/event", protect, admin, createEvent);
+router.post(["/", "/event"], protect, admin, createEvent);
 
-router.put("/updateEvent/:id", protect, admin, updateEvent);
+router.put(["/:id", "/updateEvent/:id"], protect, admin, updateEvent);
 
-router.delete("/deleteEvent/:id", protect, admin, deleteEvent);
+router.delete(["/:id", "/deleteEvent/:id"], protect, admin, deleteEvent);
 
 module.exports = router;

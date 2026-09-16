@@ -31,11 +31,25 @@ const createBooking = async (req, res) => {
   }
 };
 
+const getBookings = async (req, res) => {
+  try {
+    const filter = req.user.role === "admin" && !req.query.my ? {} : { user: req.user._id };
+    const bookings = await Booking.find(filter)
+      .populate("event")
+      .populate("user", "name email")
+      .sort({ createdAt: -1 });
+
+    res.json(bookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getMyBookings = async (req, res) => {
   try {
     const bookings = await Booking.find({
       user: req.user._id
-    }).populate("event");
+    }).populate("event").sort({ createdAt: -1 });
 
     res.json(bookings);
   } catch (error) {
@@ -89,6 +103,7 @@ const cancelBooking = async (req, res) => {
 
 module.exports = {
   createBooking,
+  getBookings,
   getMyBookings,
   getBookingById,
   cancelBooking

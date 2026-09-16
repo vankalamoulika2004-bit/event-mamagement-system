@@ -1,0 +1,17 @@
+{
+  "name": "evinto-event-management-system",
+  "version": "1.0.0",
+  "description": "Evinto - Event Management System",
+  "scripts": {
+    "start": "concurrently -n \"backend,client\" -c \"blue,magenta\" \"node backend/server.js\" \"npm run dev --prefix Frontend1\"",
+    "dev": "concurrently -n \"backend,client\" -c \"blue,magenta\" \"node backend/server.js\" \"npm run dev --prefix Frontend1\"",
+    "server": "node backend/server.js",
+    "backend": "node backend/server.js",
+    "client": "npm run dev --prefix Frontend1",
+    "build": "npm run build --prefix Frontend1",
+    "seed": "node backend/seedEvents.js"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

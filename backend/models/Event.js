@@ -9,15 +9,8 @@ const eventSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: [
-        "Cultural Events",
-        "Technical Events",
-        "Academic Events",
-        "Sports Events",
-        "Arts and Literature Events",
-        "Social and Environmental Events"
-      ],
-      required: [true, "Category is required"]
+      required: [true, "Category is required"],
+      trim: true
     },
     date: {
       type: String,

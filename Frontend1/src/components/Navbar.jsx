@@ -1,49 +1,13 @@
-import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function Navbar() {
-  const [token, setToken] = useState(localStorage.getItem("token"));
-  const [user, setUser] = useState(null);
+  const { token, user, logout } = useAuth();
   const navigate = useNavigate();
-
-  const updateNavbarState = () => {
-    const activeToken = localStorage.getItem("token");
-    const activeUserStr = localStorage.getItem("user");
-    setToken(activeToken);
-
-    if (activeToken && activeUserStr) {
-      try {
-        setUser(JSON.parse(activeUserStr));
-      } catch (e) {
-        console.log("Error parsing user cache in navbar:", e);
-        setUser(null);
-      }
-    } else {
-      setUser(null);
-    }
-  };
-
-  useEffect(() => {
-    // Populate user profile initially
-    setTimeout(() => {
-      updateNavbarState();
-    }, 0);
-
-    // Subscribe to custom auth state change events
-    const handleAuthStateChange = () => {
-      updateNavbarState();
-    };
-
-    window.addEventListener("loginStateChange", handleAuthStateChange);
-    return () => {
-      window.removeEventListener("loginStateChange", handleAuthStateChange);
-    };
-  }, []);
 
   const handleLogout = () => {
     if (window.confirm("🚪 Are you sure you want to log out of Evinto?")) {
-      localStorage.clear();
-      updateNavbarState();
+      logout();
       navigate("/");
     }
   };

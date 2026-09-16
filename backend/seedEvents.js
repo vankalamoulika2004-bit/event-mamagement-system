@@ -1,5 +1,6 @@
+const path = require("path");
 const dotenv = require("dotenv");
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, ".env") });
 
 const dns = require("dns");
 dns.setServers(["8.8.8.8", "1.1.1.1"]);

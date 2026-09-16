@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import API from "../services/api";
+import EventCard from "../components/EventCard";
+import Loader from "../components/Loader";
 import "./Home.css";
 
 function Home() {
@@ -9,26 +11,33 @@ function Home() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  async function fetchEvents() {
-    try {
-      const res = await API.get("/events");
-      if (Array.isArray(res.data) && res.data.length > 0) {
-        setEvents(res.data.slice(0, 3));
-      } else {
-        setEvents([]);
-      }
-    } catch (error) {
-      console.log("Error fetching events:", error);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    setTimeout(() => {
-      fetchEvents();
-    }, 0);
+    let isMounted = true;
+    API.get("/events")
+      .then((res) => {
+        if (isMounted) {
+          if (Array.isArray(res.data) && res.data.length > 0) {
+            setEvents(res.data.slice(0, 3));
+          } else {
+            setEvents([]);
+          }
+        }
+      })
+      .catch((error) => {
+        console.log("Error fetching events:", error);
+        if (isMounted) {
+          setEvents([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleSearchSubmit = (e) => {
@@ -209,58 +218,13 @@ function Home() {
         </p>
 
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
+          <Loader message="Loading featured events..." />
         ) : events.length === 0 ? (
           <div className="text-center py-4 text-secondary">No featured events found.</div>
         ) : (
           <div className="events-flex-grid">
             {events.map((event) => (
-              <div className="glass-panel premium-event-card d-flex flex-column" key={event._id || event.id}>
-                <div className="event-img-wrapper" style={{ position: "relative" }}>
-                  <img src={event.image} alt={event.title} />
-                  <span className="event-category-tag">{event.category || "Featured"}</span>
-                  <span
-                    style={{
-                      position: "absolute",
-                      bottom: "12px",
-                      right: "12px",
-                      background: "rgba(16, 185, 129, 0.9)",
-                      color: "#fff",
-                      fontWeight: 800,
-                      fontSize: "0.85rem",
-                      padding: "4px 12px",
-                      borderRadius: "100px",
-                      backdropFilter: "blur(10px)"
-                    }}
-                  >
-                    ₹{event.price}
-                  </span>
-                </div>
-                <div className="event-card-body text-start d-flex flex-column flex-grow-1">
-                  <div className="event-date-loc mb-2" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
-                    <span>📅 {event.date}</span>
-                    <span>📍 {event.location}</span>
-                  </div>
-                  <h3 className="event-card-title mb-2">{event.title}</h3>
-                  <p className="event-card-desc flex-grow-1">
-                    {event.description && event.description.length > 115
-                      ? `${event.description.substring(0, 110)}...`
-                      : event.description}
-                  </p>
-                  <div className="event-card-footer mt-auto pt-3">
-                    <Link to={`/event/${event._id || event.id}`} className="event-btn-detail">
-                      More Details
-                    </Link>
-                    <Link to={`/bookingEvent/${event._id || event.id}`} className="event-btn-book">
-                      Book Seat
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <EventCard key={event._id || event.id} event={event} />
             ))}
           </div>
         )}

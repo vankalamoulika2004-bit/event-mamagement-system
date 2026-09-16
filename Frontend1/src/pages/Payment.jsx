@@ -113,6 +113,8 @@ function Payment() {
 
       if (res.data?.payment?.transactionId) {
         setTxnId(res.data.payment.transactionId);
+      } else {
+        setTxnId(`TXN_${Date.now()}`);
       }
       setSuccess(true);
     } catch (err) {
@@ -170,7 +172,7 @@ function Payment() {
               </p>
 
               <div className="glass-panel p-3 my-4 text-start" style={{ background: "rgba(255, 255, 255, 0.02)" }}>
-                <div><strong>Transaction ID:</strong> <span className="text-info">{txnId || `TXN_${Date.now()}`}</span></div>
+                <div><strong>Transaction ID:</strong> <span className="text-info">{txnId || "TXN_SUCCESS"}</span></div>
                 <div><strong>Attendee:</strong> {booking?.attendeeName || booking?.user?.name}</div>
                 <div><strong>Tickets:</strong> {ticketsCount} Ticket(s)</div>
                 <div><strong>Total Paid:</strong> ₹{totalAmount}</div>

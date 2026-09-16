@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import API from "../services/api";
+import EventCard from "../components/EventCard";
+import Loader from "../components/Loader";
 import "./Home.css";
 
 function Events() {
@@ -12,22 +14,29 @@ function Events() {
   const [searchQuery, setSearchQuery] = useState(searchParamQuery);
   const [selectedCategory, setSelectedCategory] = useState("All");
 
-  async function fetchEvents() {
-    try {
-      const res = await API.get("/events");
-      setEvents(res.data);
-    } catch (error) {
-      console.log("Error fetching events:", error);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-
   useEffect(() => {
-    setTimeout(() => {
-      fetchEvents();
-    }, 0);
+    let isMounted = true;
+    API.get("/events")
+      .then((res) => {
+        if (isMounted) {
+          setEvents(Array.isArray(res.data) ? res.data : []);
+        }
+      })
+      .catch((error) => {
+        console.log("Error fetching events:", error);
+        if (isMounted) {
+          setEvents([]);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const categories = [
@@ -44,32 +53,35 @@ function Events() {
   const matchesCategoryTag = (eventCat, selectedCat) => {
     if (selectedCat === "All") return true;
     if (!eventCat) return false;
-    const catLower = eventCat.toLowerCase();
+    const catLower = String(eventCat).toLowerCase();
     switch (selectedCat) {
       case "Cultural":
-        return catLower.includes("cultural");
+        return catLower.includes("cultural") || catLower.includes("fest") || catLower.includes("concert") || catLower.includes("dance") || catLower.includes("singing");
       case "Technical":
-        return catLower.includes("technical");
+        return catLower.includes("technical") || catLower.includes("workshop") || catLower.includes("hackathon") || catLower.includes("tech");
       case "Academic":
-        return catLower.includes("academic");
+        return catLower.includes("academic") || catLower.includes("seminar") || catLower.includes("conference");
       case "Sports":
-        return catLower.includes("sports");
+        return catLower.includes("sports") || catLower.includes("tournament") || catLower.includes("athletic");
       case "Arts & Literature":
-        return catLower.includes("arts") || catLower.includes("literature");
+        return catLower.includes("arts") || catLower.includes("literature") || catLower.includes("drama") || catLower.includes("rangoli");
       case "Social & Environmental":
-        return catLower.includes("social") || catLower.includes("environmental");
+        return catLower.includes("social") || catLower.includes("environmental") || catLower.includes("camp") || catLower.includes("plantation") || catLower.includes("health");
       default:
         return catLower.includes(selectedCat.toLowerCase());
     }
   };
 
-  // Filter events based on search query and category tab
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (event.location && event.location.toLowerCase().includes(searchQuery.toLowerCase()));
+  // Filter events based on search query and category tab (fully guarded against null/undefined)
+  const filteredEvents = (Array.isArray(events) ? events : []).filter((event) => {
+    if (!event) return false;
+    const q = (searchQuery || "").trim().toLowerCase();
+    const title = (event.title || "").toLowerCase();
+    const desc = (event.description || "").toLowerCase();
+    const loc = (event.location || "").toLowerCase();
+    const cat = (event.category || "").toLowerCase();
 
+    const matchesSearch = !q || title.includes(q) || desc.includes(q) || loc.includes(q) || cat.includes(q);
     const matchesCat = matchesCategoryTag(event.category, selectedCategory);
 
     return matchesSearch && matchesCat;
@@ -111,7 +123,7 @@ function Events() {
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
-                  setSearchParams({ search: e.target.value });
+                  setSearchParams(e.target.value ? { search: e.target.value } : {});
                 }}
               />
               {searchQuery && (
@@ -155,11 +167,7 @@ function Events() {
         </div>
 
         {loading ? (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading events...</span>
-            </div>
-          </div>
+          <Loader message="Loading events catalog..." />
         ) : filteredEvents.length === 0 ? (
           <div className="text-center py-5 glass-panel p-5" style={{ maxWidth: "600px", margin: "0 auto" }}>
             <span style={{ fontSize: "3rem" }}>🧐</span>
@@ -171,49 +179,7 @@ function Events() {
         ) : (
           <div className="events-flex-grid">
             {filteredEvents.map((event) => (
-              <div className="glass-panel premium-event-card d-flex flex-column" key={event._id || event.id}>
-                <div className="event-img-wrapper" style={{ position: "relative" }}>
-                  <img src={event.image} alt={event.title} />
-                  <span className="event-category-tag">{event.category || "General"}</span>
-                  <span
-                    style={{
-                      position: "absolute",
-                      bottom: "12px",
-                      right: "12px",
-                      background: "rgba(16, 185, 129, 0.9)",
-                      color: "#fff",
-                      fontWeight: 800,
-                      fontSize: "0.88rem",
-                      padding: "4px 12px",
-                      borderRadius: "100px",
-                      backdropFilter: "blur(10px)"
-                    }}
-                  >
-                    ₹{event.price}
-                  </span>
-                </div>
-                <div className="event-card-body text-start d-flex flex-column flex-grow-1">
-                  <div className="event-date-loc mb-2" style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
-                    <span>📅 {event.date}</span>
-                    <span>⏰ {event.time || "10:00 AM"}</span>
-                    <span>📍 {event.location}</span>
-                  </div>
-                  <h3 className="event-card-title mb-2">{event.title}</h3>
-                  <p className="event-card-desc flex-grow-1">
-                    {event.description && event.description.length > 110
-                      ? `${event.description.substring(0, 105)}...`
-                      : event.description}
-                  </p>
-                  <div className="event-card-footer mt-auto pt-3">
-                    <Link to={`/event/${event._id || event.id}`} className="event-btn-detail">
-                      More Details
-                    </Link>
-                    <Link to={`/bookingEvent/${event._id || event.id}`} className="event-btn-book">
-                      Book Seat
-                    </Link>
-                  </div>
-                </div>
-              </div>
+              <EventCard key={event._id || event.id} event={event} />
             ))}
           </div>
         )}

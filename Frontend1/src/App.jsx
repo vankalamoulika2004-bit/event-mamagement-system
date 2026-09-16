@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -15,32 +15,33 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AddEvent from "./pages/AddEvent";
 import Contact from "./pages/Contact";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
-    <div>
-    <BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Navbar />
 
-      <Navbar />
-        
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/event/:id" element={<EventDetails />} />
-        <Route path="/bookingEvent/:id" element={<ProtectedRoute><BookingEvent /></ProtectedRoute>} />
-        <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
-        <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>} />
-        <Route path="/add-event" element={<ProtectedRoute adminOnly={true}><AddEvent /></ProtectedRoute>} />
-        <Route path="/contact" element={<Contact />} />
-      </Routes>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/event/:id" element={<EventDetails />} />
+          <Route path="/bookingEvent/:id" element={<ProtectedRoute><BookingEvent /></ProtectedRoute>} />
+          <Route path="/payment/:id" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+          <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly={true}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/add-event" element={<ProtectedRoute adminOnly={true}><AddEvent /></ProtectedRoute>} />
+          <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
 
-      <Footer />
-    </BrowserRouter>
-    </div>
+        <Footer />
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

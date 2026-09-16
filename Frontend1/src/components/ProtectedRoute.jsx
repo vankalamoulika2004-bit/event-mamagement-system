@@ -1,21 +1,25 @@
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 function ProtectedRoute({ children, adminOnly = false }) {
-  const token = localStorage.getItem("token");
-  let user = null;
-  if (adminOnly) {
+  const { token, user } = useAuth();
+
+  // Fallback to localStorage check in case of hydration delay
+  const activeToken = token || localStorage.getItem("token");
+  let activeUser = user;
+  if (!activeUser) {
     try {
-      user = JSON.parse(localStorage.getItem("user") || "null");
+      activeUser = JSON.parse(localStorage.getItem("user") || "null");
     } catch {
-      user = null;
+      activeUser = null;
     }
   }
 
-  if (!token) {
+  if (!activeToken) {
     return <Navigate to="/login" replace />;
   }
 
-  if (adminOnly && (!user || user.role !== "admin")) {
+  if (adminOnly && (!activeUser || activeUser.role !== "admin")) {
     return <Navigate to="/dashboard" replace />;
   }
 

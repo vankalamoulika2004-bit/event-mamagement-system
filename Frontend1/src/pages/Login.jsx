@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import API from "../services/api";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -26,12 +28,8 @@ const Login = () => {
         password,
       });
 
-      // Save user auth state
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data));
-
-      // Dispatch a login event so the Navbar updates reactively
-      window.dispatchEvent(new Event("loginStateChange"));
+      // Save user auth state via AuthContext
+      login(res.data);
 
       // Navigate based on role
       if (res.data.role === "admin") {

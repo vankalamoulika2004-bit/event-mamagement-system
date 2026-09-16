@@ -32,7 +32,25 @@ const createEvent = async (req, res) => {
 const getEvents = async (req, res) => {
   try {
     const events = await Event.find().sort({ createdAt: -1 });
-    res.json(events);
+    const activeBookings = await Booking.find({ status: { $ne: "Cancelled" } });
+
+    const bookingsByEvent = {};
+    activeBookings.forEach((b) => {
+      const eId = b.event?.toString();
+      if (eId) {
+        bookingsByEvent[eId] = (bookingsByEvent[eId] || 0) + (b.ticketsCount || 1);
+      }
+    });
+
+    const eventsWithSeats = events.map((ev) => {
+      const evObj = ev.toObject();
+      const booked = bookingsByEvent[ev._id.toString()] || 0;
+      evObj.bookedTickets = booked;
+      evObj.availableSeats = Math.max(0, (ev.maxParticipants || 100) - booked);
+      return evObj;
+    });
+
+    res.json(eventsWithSeats);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
