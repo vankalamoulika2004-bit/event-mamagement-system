@@ -15,10 +15,16 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 
 const connectDB = require("./config/db");
 
-const app = express();
+const corsOptions = {
+  origin: true, // Dynamically reflects request origin (e.g. http://localhost:5173), allowing credentials without violating wildcard CORS rules
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept", "Origin"]
+};
 
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Health check routes
 app.get(["/", "/api"], (req, res) => {
@@ -26,6 +32,7 @@ app.get(["/", "/api"], (req, res) => {
 });
 
 app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api", require("./routes/authRoutes")); // alias for /api/login and /api/register
 app.use("/api/events", require("./routes/eventRoutes"));
 app.use("/api/bookings", require("./routes/bookingRoutes"));
 app.use("/api/payments", require("./routes/paymentRoutes"));
