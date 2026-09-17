@@ -15,6 +15,8 @@ dotenv.config({ path: path.join(__dirname, ".env") });
 
 const connectDB = require("./config/db");
 
+const app = express();
+
 const corsOptions = {
   origin: true, // Dynamically reflects request origin (e.g. http://localhost:5173), allowing credentials without violating wildcard CORS rules
   credentials: true,
@@ -100,4 +102,4 @@ const startServer = async () => {
 };
 
 startServer();
-
+

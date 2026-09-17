@@ -41,6 +41,20 @@ const dashboardData = async (req, res) => {
   }
 };
 
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find()
+      .select("-password") // Exclude password from response
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    console.error("Get All Users Error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
-  dashboardData
-};
+  dashboardData,
+  getAllUsers
+};

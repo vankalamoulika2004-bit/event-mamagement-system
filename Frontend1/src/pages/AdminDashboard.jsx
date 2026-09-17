@@ -6,10 +6,11 @@ import "./Home.css";
 function AdminDashboard() {
   const [stats, setStats] = useState({ users: 0, events: 0, bookings: 0, payments: 0, revenue: 0 });
   const [eventsList, setEventsList] = useState([]);
+  const [usersList, setUsersList] = useState([]);
   const [bookingsList, setBookingsList] = useState([]);
   const [paymentsList, setPaymentsList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("events"); // 'events', 'bookings', 'payments'
+  const [activeTab, setActiveTab] = useState("events"); // 'events', 'users', 'bookings', 'payments'
   const navigate = useNavigate();
 
   // Edit Event Modal State
@@ -56,6 +57,16 @@ function AdminDashboard() {
     }
   }
 
+  async function fetchUsersList() {
+    try {
+      const res = await API.get("/admin/users");
+      setUsersList(res.data);
+    } catch (err) {
+      console.log("Error querying admin users list:", err);
+      setUsersList([]);
+    }
+  }
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     const cachedUser = localStorage.getItem("user");
@@ -75,6 +86,7 @@ function AdminDashboard() {
       setTimeout(() => {
         fetchDashboardData();
         fetchEventsList();
+        fetchUsersList();
       }, 0);
     } catch (e) {
       console.log(e);
@@ -221,6 +233,14 @@ function AdminDashboard() {
           </button>
 
           <button
+            onClick={() => setActiveTab("users")}
+            className={`btn px-4 py-2 fw-bold ${activeTab === "users" ? "btn-primary" : "btn-dark"}`}
+            style={{ borderRadius: "10px" }}
+          >
+            👥 User Management ({usersList.length})
+          </button>
+
+          <button
             onClick={() => setActiveTab("bookings")}
             className={`btn px-4 py-2 fw-bold ${activeTab === "bookings" ? "btn-primary" : "btn-dark"}`}
             style={{ borderRadius: "10px" }}
@@ -314,7 +334,50 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 2: BOOKING MANAGEMENT */}
+        {/* TAB 2: USER MANAGEMENT */}
+        {activeTab === "users" && (
+          <div className="glass-panel p-4 text-start mb-5">
+            <h4 className="font-heading fw-bold mb-4">👥 All Registered Users</h4>
+
+            {usersList.length === 0 ? (
+              <div className="text-center py-4 text-secondary">No users registered yet.</div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-dark table-hover align-middle" style={{ background: "transparent" }}>
+                  <thead>
+                    <tr style={{ color: "#64748b", borderColor: "rgba(255,255,255,0.06)", fontSize: "0.85rem" }}>
+                      <th>User Name</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Registration Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usersList.map((user) => (
+                      <tr key={user._id} style={{ borderColor: "rgba(255,255,255,0.06)" }}>
+                        <td className="fw-bold">{user.name || "User"}</td>
+                        <td>{user.email}</td>
+                        <td>
+                          <span
+                            className={`badge ${user.role === "admin" ? "bg-danger" : "bg-primary"}`}
+                            style={{ borderRadius: "8px", padding: "5px 10px" }}
+                          >
+                            {user.role || "user"}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: "0.82rem", color: "#94a3b8" }}>
+                          {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: BOOKING MANAGEMENT */}
         {activeTab === "bookings" && (
           <div className="glass-panel p-4 text-start mb-5">
             <h4 className="font-heading fw-bold mb-4">🎟️ All Student & User Bookings</h4>
@@ -370,7 +433,7 @@ function AdminDashboard() {
           </div>
         )}
 
-        {/* TAB 3: PAYMENT MANAGEMENT */}
+        {/* TAB 4: PAYMENT MANAGEMENT */}
         {activeTab === "payments" && (
           <div className="glass-panel p-4 text-start mb-5">
             <h4 className="font-heading fw-bold mb-4">💳 All Verified Payment Transactions</h4>
